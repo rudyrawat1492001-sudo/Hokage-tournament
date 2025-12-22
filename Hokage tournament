@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hokage Tournament</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:radial-gradient(circle at top,#222 0%,#000 60%);
+    color:#fff;
+}
+h1{
+    text-align:center;
+    padding:20px;
+    color:gold;
+    letter-spacing:2px;
+}
+.controls{text-align:center;margin-bottom:15px;}
+button{
+    margin:5px;
+    padding:10px 18px;
+    background:#c62828;
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:bold;
+}
+button:hover{background:#ff9800;}
+.container{
+    width:95%;
+    margin:auto;
+    display:flex;
+    gap:20px;
+}
+.matches,.leaderboard{
+    background:#111;
+    padding:15px;
+    border-radius:8px;
+    box-shadow:0 0 15px rgba(255,215,0,0.2);
+    flex:1;
+}
+.matches h2,.leaderboard h2{
+    text-align:center;
+    color:gold;
+}
+.player-row{
+    display:flex;
+    justify-content:space-between;
+    margin:6px 0;
+}
+select{width:70%;padding:5px;}
+table{
+    width:100%;
+    border-collapse:collapse;
+    text-align:center;
+}
+th,td{
+    border:1px solid #444;
+    padding:6px;
+}
+th{background:#222;color:gold;}
+tr.highlight{background:rgba(255,215,0,0.15);}
+</style>
+</head>
+
+<body>
+
+<h1>Hokage Tournament</h1>
+
+<div class="controls">
+    <button onclick="saveData()">Save</button>
+    <button onclick="loadData()">Load</button>
+    <button onclick="resetData()">Reset</button>
+</div>
+
+<div class="container">
+
+<!-- MATCH -->
+<div class="matches">
+<h2>4-Player Group Fight</h2>
+
+<div class="player-row">
+    <span>Player 1</span>
+    <select id="p1"></select>
+</div>
+<div class="player-row">
+    <span>Player 2</span>
+    <select id="p2"></select>
+</div>
+<div class="player-row">
+    <span>Player 3</span>
+    <select id="p3"></select>
+</div>
+<div class="player-row">
+    <span>Player 4</span>
+    <select id="p4"></select>
+</div>
+
+<div class="player-row">
+    <span>Winner</span>
+    <select id="winner"></select>
+</div>
+
+<button onclick="setWinner()">Set Winner ✔️</button>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="leaderboard">
+<h2>Leaderboard</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Wins</th>
+<th>Loss</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody id="board"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+// ✅ 43 PLAYERS
+const players = [
+"Naruto","Kakashi","Sai","Sakura","Neji","Rocklee","Tenten","Might Guy",
+"Shikamaru","Ino","Choji","Asuma","Kiba","Shino","Hinata","Kurenai",
+"Sasuke","Gaara","Karin","Jugo","Deidara","Hidan","Sasori","Tobi",
+"Itachi","Kisame","Hidan 2","Kakuzu","Konan","Pain","Garaa","Temari",
+"Kankuro","Chiyo","Yamato","Zabuza","Tsunade","Jiraiya","Kabuto",
+"Orochimaru","Minato","Final Obito","Small Kakashi"
+];
+
+let data = {};
+players.forEach(p=>data[p]={wins:0,loss:0,points:0});
+
+// populate dropdowns
+["p1","p2","p3","p4","winner"].forEach(id=>{
+    const sel=document.getElementById(id);
+    players.forEach(p=>{
+        let o=document.createElement("option");
+        o.value=p;o.text=p;
+        sel.appendChild(o);
+    });
+});
+
+function setWinner(){
+    let p1=p1v(),p2=p2v(),p3=p3v(),p4=p4v();
+    let win=document.getElementById("winner").value;
+    let matchPlayers=[p1,p2,p3,p4];
+
+    if(new Set(matchPlayers).size<4){
+        alert("4 alag players select karo");
+        return;
+    }
+    if(!matchPlayers.includes(win)){
+        alert("Winner match ka player hona chahiye");
+        return;
+    }
+
+    matchPlayers.forEach(p=>{
+        if(p===win){
+            data[p].wins++;
+            data[p].points++;
+        }else{
+            data[p].loss++;
+        }
+    });
+    renderBoard();
+    alert("✔️ Winner: "+win);
+}
+
+function p1v(){return document.getElementById("p1").value;}
+function p2v(){return document.getElementById("p2").value;}
+function p3v(){return document.getElementById("p3").value;}
+function p4v(){return document.getElementById("p4").value;}
+
+function renderBoard(){
+    const tbody=document.getElementById("board");
+    tbody.innerHTML="";
+    let sorted=Object.entries(data)
+        .sort((a,b)=>b[1].points-a[1].points||b[1].wins-a[1].wins);
+
+    sorted.forEach((e,i)=>{
+        let tr=document.createElement("tr");
+        if(i===0)tr.classList.add("highlight");
+        tr.innerHTML=`
+        <td>${i+1}</td>
+        <td>${e[0]} ${i===0?"✔️":""}</td>
+        <td>${e[1].wins}</td>
+        <td>${e[1].loss}</td>
+        <td>${e[1].points}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function saveData(){
+    localStorage.setItem("hokageData",JSON.stringify(data));
+    alert("Saved ✅");
+}
+function loadData(){
+    let d=localStorage.getItem("hokageData");
+    if(!d){alert("No data");return;}
+    data=JSON.parse(d);
+    renderBoard();
+    alert("Loaded ✅");
+}
+function resetData(){
+    if(!confirm("Reset tournament?"))return;
+    players.forEach(p=>data[p]={wins:0,loss:0,points:0});
+    localStorage.removeItem("hokageData");
+    renderBoard();
+}
+renderBoard();
+</script>
+
+</body>
+</html>

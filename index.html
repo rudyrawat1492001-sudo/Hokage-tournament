@@ -67,6 +67,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 
 <h1>Hokage Tournament</h1>
 
+
 <div class="controls">
     <button onclick="generateMatch()">Generate Match 🎲</button>
     <button onclick="saveData()">Save</button>
@@ -120,7 +121,8 @@ players.forEach(p=>{
 });
 
 let currentMatch=[];
-
+let positions = [null,null,null,null];
+    
 // SHUFFLE
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
@@ -141,31 +143,59 @@ function generateMatch(){
   renderMatch();
 }
 function renderMatch(){
-  let area=document.getElementById("matchArea");
+  let area = document.getElementById("matchArea");
   area.innerHTML="";
 
-  const labels = ["1st 🥇","2nd 🥈","3rd 🥉","4th 😵"];
-
-  labels.forEach((l,i)=>{
-    area.innerHTML+=`
+  currentMatch.forEach(p=>{
+    area.innerHTML += `
       <div class="player">
-        <b>${l}</b>
-        <select id="pos${i}">
-          ${currentMatch.map(p=>`<option value="${p}">${p}</option>`).join("")}
-        </select>
-      </div>`;
+        <b>${p}</b><br>
+        <button onclick="assign('${p}',0)">🥇</button>
+        <button onclick="assign('${p}',1)">🥈</button>
+        <button onclick="assign('${p}',2)">🥉</button>
+        <button onclick="assign('${p}',3)">😵</button>
+      </div>
+    `;
   });
 
-  area.innerHTML+=`<button onclick="setResult()">Set Result ✔️</button>`;
+  area.innerHTML += `<br><button onclick="finalize()">Set Result ✔️</button>`;
 }
 
-function setResult(){
-  let result = [
-    document.getElementById("pos0").value,
-    document.getElementById("pos1").value,
-    document.getElementById("pos2").value,
-    document.getElementById("pos3").value
-  ];
+    function assign(player,pos){
+  if(positions.includes(player)){
+    alert(player+" already assigned ❌");
+    return;
+  }
+  if(positions[pos]){
+    alert("Position already taken ❌");
+    return;
+  }
+  positions[pos] = player;
+  alert(player+" assigned to position "+(pos+1));
+}
+
+    function finalize(){
+  if(positions.includes(null)){
+    alert("Sab positions assign karo ❌");
+    return;
+  }
+
+  const points = [2,1,0,-1];
+
+  positions.forEach((p,i)=>{
+    data[p].matches++;
+    data[p].points += points[i];
+    if(i===0) data[p].wins++;
+    else data[p].loss++;
+  });
+
+  renderBoard();
+  alert("Result Saved ✅");
+
+  currentMatch=[];
+  positions=[null,null,null,null];
+  document.getElementById("matchArea").innerHTML="";
+}
 
   // validation
   if(new Set(result).size < 4){

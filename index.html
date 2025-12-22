@@ -133,6 +133,8 @@ function shuffle(arr){
 
 // GENERATE MATCH (MIN 4 MATCHES LOGIC)
 function generateMatch(){
+    positions = [null,null,null,null];
+
   let eligible = players.filter(p=>data[p].matches<4);
   if(eligible.length<4){
     alert("League stage complete ✅");
@@ -142,6 +144,7 @@ function generateMatch(){
   currentMatch = eligible.slice(0,4);
   renderMatch();
 }
+    
 function renderMatch(){
   let area = document.getElementById("matchArea");
   area.innerHTML="";
@@ -197,28 +200,7 @@ function renderMatch(){
   document.getElementById("matchArea").innerHTML="";
 }
 
-  // validation
-  if(new Set(result).size < 4){
-    alert("Same player repeat ho raha hai ❌");
-    return;
-  }
-
-  const points = [2,1,0,-1];
-
-  result.forEach((p,i)=>{
-    data[p].matches++;
-    data[p].points += points[i];
-
-    if(i===0) data[p].wins++;
-    else data[p].loss++;
-  });
-
-  renderBoard();
-  alert("Result Saved ✅");
-  currentMatch=[];
-  document.getElementById("matchArea").innerHTML="";
-}
-
+  
 // LEADERBOARD
 function renderBoard(){
   let tbody=document.getElementById("board");

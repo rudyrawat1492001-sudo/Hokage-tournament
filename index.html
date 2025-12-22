@@ -46,12 +46,9 @@ button:hover{background:#ff9800;}
     text-align:center;
     color:gold;
 }
-.player-row{
-    display:flex;
-    justify-content:space-between;
+.player{
     margin:6px 0;
 }
-select{width:70%;padding:5px;}
 table{
     width:100%;
     border-collapse:collapse;
@@ -71,6 +68,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 <h1>Hokage Tournament</h1>
 
 <div class="controls">
+    <button onclick="generateMatch()">Generate Match 🎲</button>
     <button onclick="saveData()">Save</button>
     <button onclick="loadData()">Load</button>
     <button onclick="resetData()">Reset</button>
@@ -81,30 +79,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 <!-- MATCH -->
 <div class="matches">
 <h2>4-Player Group Fight</h2>
-
-<div class="player-row">
-    <span>Player 1</span>
-    <select id="p1"></select>
-</div>
-<div class="player-row">
-    <span>Player 2</span>
-    <select id="p2"></select>
-</div>
-<div class="player-row">
-    <span>Player 3</span>
-    <select id="p3"></select>
-</div>
-<div class="player-row">
-    <span>Player 4</span>
-    <select id="p4"></select>
-</div>
-
-<div class="player-row">
-    <span>Winner</span>
-    <select id="winner"></select>
-</div>
-
-<button onclick="setWinner()">Set Winner ✔️</button>
+<div id="matchArea"></div>
 </div>
 
 <!-- LEADERBOARD -->
@@ -118,6 +93,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 <th>Wins</th>
 <th>Loss</th>
 <th>Points</th>
+<th>Matches</th>
 </tr>
 </thead>
 <tbody id="board"></tbody>
@@ -127,7 +103,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 </div>
 
 <script>
-// ✅ 43 PLAYERS
+// 🔥 43 PLAYERS
 const players = [
 "Naruto","Kakashi","Sai","Sakura","Neji","Rocklee","Tenten","Might Guy",
 "Shikamaru","Ino","Choji","Asuma","Kiba","Shino","Hinata","Kurenai",
@@ -137,86 +113,113 @@ const players = [
 "Orochimaru","Minato","Final Obito","Small Kakashi"
 ];
 
+// DATA
 let data = {};
-players.forEach(p=>data[p]={wins:0,loss:0,points:0});
-
-// populate dropdowns
-["p1","p2","p3","p4","winner"].forEach(id=>{
-    const sel=document.getElementById(id);
-    players.forEach(p=>{
-        let o=document.createElement("option");
-        o.value=p;o.text=p;
-        sel.appendChild(o);
-    });
+players.forEach(p=>{
+  data[p]={wins:0,loss:0,points:0,matches:0};
 });
 
+let currentMatch=[];
+
+// SHUFFLE
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+// GENERATE MATCH (MIN 4 MATCHES LOGIC)
+function generateMatch(){
+  let eligible = players.filter(p=>data[p].matches<4);
+  if(eligible.length<4){
+    alert("League stage complete ✅");
+    return;
+  }
+  shuffle(eligible);
+  currentMatch = eligible.slice(0,4);
+  renderMatch();
+}
+
+// RENDER MATCH
+function renderMatch(){
+  let area=document.getElementById("matchArea");
+  area.innerHTML="";
+  currentMatch.forEach(p=>{
+    area.innerHTML+=`
+      <div class="player">
+        <label>
+          <input type="radio" name="winner" value="${p}"> ${p}
+        </label>
+      </div>`;
+  });
+  area.innerHTML+=`<button onclick="setWinner()">Set Winner ✔️</button>`;
+}
+
+// SET WINNER
 function setWinner(){
-    let p1=p1v(),p2=p2v(),p3=p3v(),p4=p4v();
-    let win=document.getElementById("winner").value;
-    let matchPlayers=[p1,p2,p3,p4];
+  let sel=document.querySelector('input[name="winner"]:checked');
+  if(!sel){alert("Winner select karo");return;}
+  let win=sel.value;
 
-    if(new Set(matchPlayers).size<4){
-        alert("4 alag players select karo");
-        return;
+  currentMatch.forEach(p=>{
+    data[p].matches++;
+    if(p===win){
+      data[p].wins++;
+      data[p].points++;
+    }else{
+      data[p].loss++;
     }
-    if(!matchPlayers.includes(win)){
-        alert("Winner match ka player hona chahiye");
-        return;
-    }
+  });
 
-    matchPlayers.forEach(p=>{
-        if(p===win){
-            data[p].wins++;
-            data[p].points++;
-        }else{
-            data[p].loss++;
-        }
-    });
-    renderBoard();
-    alert("✔️ Winner: "+win);
+  renderBoard();
+  alert("✔️ Winner: "+win);
+  currentMatch=[];
+  document.getElementById("matchArea").innerHTML="";
 }
 
-function p1v(){return document.getElementById("p1").value;}
-function p2v(){return document.getElementById("p2").value;}
-function p3v(){return document.getElementById("p3").value;}
-function p4v(){return document.getElementById("p4").value;}
-
+// LEADERBOARD
 function renderBoard(){
-    const tbody=document.getElementById("board");
-    tbody.innerHTML="";
-    let sorted=Object.entries(data)
-        .sort((a,b)=>b[1].points-a[1].points||b[1].wins-a[1].wins);
+  let tbody=document.getElementById("board");
+  tbody.innerHTML="";
+  let sorted=Object.entries(data)
+    .sort((a,b)=>b[1].points-a[1].points||b[1].wins-a[1].wins);
 
-    sorted.forEach((e,i)=>{
-        let tr=document.createElement("tr");
-        if(i===0)tr.classList.add("highlight");
-        tr.innerHTML=`
-        <td>${i+1}</td>
-        <td>${e[0]} ${i===0?"✔️":""}</td>
-        <td>${e[1].wins}</td>
-        <td>${e[1].loss}</td>
-        <td>${e[1].points}</td>`;
-        tbody.appendChild(tr);
-    });
+  sorted.forEach((e,i)=>{
+    let tr=document.createElement("tr");
+    if(i===0)tr.classList.add("highlight");
+    tr.innerHTML=`
+      <td>${i+1}</td>
+      <td>${e[0]} ${i===0?"✔️":""}</td>
+      <td>${e[1].wins}</td>
+      <td>${e[1].loss}</td>
+      <td>${e[1].points}</td>
+      <td>${e[1].matches}</td>`;
+    tbody.appendChild(tr);
+  });
 }
 
+// SAVE / LOAD / RESET
 function saveData(){
-    localStorage.setItem("hokageData",JSON.stringify(data));
-    alert("Saved ✅");
+  localStorage.setItem("hokageData",JSON.stringify(data));
+  alert("Saved ✅");
 }
 function loadData(){
-    let d=localStorage.getItem("hokageData");
-    if(!d){alert("No data");return;}
-    data=JSON.parse(d);
-    renderBoard();
-    alert("Loaded ✅");
+  let d=localStorage.getItem("hokageData");
+  if(!d){alert("No data");return;}
+  data=JSON.parse(d);
+  renderBoard();
+  alert("Loaded ✅");
 }
 function resetData(){
-    if(!confirm("Reset tournament?"))return;
-    players.forEach(p=>data[p]={wins:0,loss:0,points:0});
-    localStorage.removeItem("hokageData");
-    renderBoard();
+  if(!confirm("Reset tournament?"))return;
+  players.forEach(p=>{
+    data[p]={wins:0,loss:0,points:0,matches:0};
+  });
+  localStorage.removeItem("hokageData");
+  renderBoard();
 }
+
 renderBoard();
 </script>
 

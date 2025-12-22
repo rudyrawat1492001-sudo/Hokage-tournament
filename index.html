@@ -140,40 +140,51 @@ function generateMatch(){
   currentMatch = eligible.slice(0,4);
   renderMatch();
 }
-
-// RENDER MATCH
 function renderMatch(){
   let area=document.getElementById("matchArea");
   area.innerHTML="";
-  currentMatch.forEach(p=>{
+
+  const labels = ["1st 🥇","2nd 🥈","3rd 🥉","4th 😵"];
+
+  labels.forEach((l,i)=>{
     area.innerHTML+=`
       <div class="player">
-        <label>
-          <input type="radio" name="winner" value="${p}"> ${p}
-        </label>
+        <b>${l}</b>
+        <select id="pos${i}">
+          ${currentMatch.map(p=>`<option value="${p}">${p}</option>`).join("")}
+        </select>
       </div>`;
   });
-  area.innerHTML+=`<button onclick="setWinner()">Set Winner ✔️</button>`;
+
+  area.innerHTML+=`<button onclick="setResult()">Set Result ✔️</button>`;
 }
 
-// SET WINNER
-function setWinner(){
-  let sel=document.querySelector('input[name="winner"]:checked');
-  if(!sel){alert("Winner select karo");return;}
-  let win=sel.value;
+function setResult(){
+  let result = [
+    document.getElementById("pos0").value,
+    document.getElementById("pos1").value,
+    document.getElementById("pos2").value,
+    document.getElementById("pos3").value
+  ];
 
-  currentMatch.forEach(p=>{
+  // validation
+  if(new Set(result).size < 4){
+    alert("Same player repeat ho raha hai ❌");
+    return;
+  }
+
+  const points = [2,1,0,-1];
+
+  result.forEach((p,i)=>{
     data[p].matches++;
-    if(p===win){
-      data[p].wins++;
-      data[p].points++;
-    }else{
-      data[p].loss++;
-    }
+    data[p].points += points[i];
+
+    if(i===0) data[p].wins++;
+    else data[p].loss++;
   });
 
   renderBoard();
-  alert("✔️ Winner: "+win);
+  alert("Result Saved ✅");
   currentMatch=[];
   document.getElementById("matchArea").innerHTML="";
 }

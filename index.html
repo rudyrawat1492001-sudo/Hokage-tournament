@@ -69,7 +69,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 
 
 <div class="controls">
-    <button onclick="generateMatch()">Generate Match 🎲</button>
+<button onclick="generateMatch()" id="genBtn">Generate Match 🎲</button>
     <button onclick="saveData()">Save</button>
     <button onclick="loadData()">Load</button>
     <button onclick="resetData()">Reset</button>
@@ -146,6 +146,10 @@ function generateMatch(){
 }
     
 function renderMatch(){
+
+  // 🔒 Generate button lock
+  document.getElementById("genBtn").disabled = true;
+
   let area = document.getElementById("matchArea");
   area.innerHTML="";
 
@@ -164,6 +168,7 @@ function renderMatch(){
   area.innerHTML += `<br><button onclick="finalize()">Set Result ✔️</button>`;
 }
 
+
     function assign(player,pos){
   if(positions.includes(player)){
     alert(player+" already assigned ❌");
@@ -178,6 +183,12 @@ function renderMatch(){
 }
 
     function finalize(){
+
+  if(currentMatch.length === 0){
+    alert("No active match ❌");
+    return;
+  }
+
   if(positions.includes(null)){
     alert("Sab positions assign karo ❌");
     return;
@@ -186,18 +197,22 @@ function renderMatch(){
   const points = [2,1,0,-1];
 
   positions.forEach((p,i)=>{
-    data[p].matches++;
+    data[p].matches++;      // match count (even 0 point)
     data[p].points += points[i];
     if(i===0) data[p].wins++;
     else data[p].loss++;
   });
 
+  // 🧹 reset match
+  currentMatch = [];
+  positions = [null,null,null,null];
+  document.getElementById("matchArea").innerHTML = "";
+
+  // 🔓 generate button unlock
+  document.getElementById("genBtn").disabled = false;
+
   renderBoard();
   alert("Result Saved ✅");
-
-  currentMatch=[];
-  positions=[null,null,null,null];
-  document.getElementById("matchArea").innerHTML="";
 }
 
   

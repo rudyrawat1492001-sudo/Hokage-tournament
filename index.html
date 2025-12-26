@@ -80,7 +80,8 @@ tr.highlight{background:rgba(255,215,0,0.15);}
  <!-- MATCH -->
 <div class="matches">
 <div class="controls">
-  <button onclick="autoMatch()">Set Match ✔️</button>
+<button onclick="startTournament()">Set Match ✔️</button>
+
 </div>
 <hr>
 
@@ -114,6 +115,11 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 </div>
 
 <script>
+    // 🔹 AUTO LEAGUE MATCH STORAGE
+let allMatches = [];
+let matchIndex = 0;
+
+    
     function autoMatch(){
   positions = [null,null,null,null];
 
@@ -155,7 +161,47 @@ function shuffle(arr){
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
 }
-    
+    // 🔹 GENERATE ALL LEAGUE MATCHES AT ONCE
+function generateAllLeagueMatches(){
+
+  let tempMatches = [];
+  let count = {};
+  players.forEach(p => count[p] = 0);
+
+  while(true){
+    let pool = players.filter(p => count[p] < 4);
+    if(pool.length < 4) break;
+
+    shuffle(pool);
+    let match = pool.slice(0,4);
+
+    match.forEach(p => count[p]++);
+    tempMatches.push(match);
+  }
+
+  allMatches = tempMatches;
+  matchIndex = 0;
+}
+
+    // 🔹 LOAD NEXT PRE-GENERATED MATCH
+function loadNextMatch(){
+
+  if(matchIndex >= allMatches.length){
+    alert("League Complete ✅");
+    return;
+  }
+
+  currentMatch = allMatches[matchIndex];
+  positions = [null,null,null,null];
+  renderMatch();
+}
+    // 🔹 START TOURNAMENT ONCE
+function startTournament(){
+  generateAllLeagueMatches();
+  loadNextMatch();
+}
+
+
 function renderMatch(){
 
 
@@ -220,9 +266,12 @@ function renderMatch(){
 
   renderBoard();
   alert("Result Saved ✅");
+        
+    matchIndex++;
+  loadNextMatch();
 }
 
-  
+
 // LEADERBOARD
 function renderBoard(){
   let tbody=document.getElementById("board");

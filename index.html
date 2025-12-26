@@ -79,18 +79,12 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 
  <!-- MATCH -->
 <div class="matches">
+<div class="controls">
+  <button onclick="autoMatch()">Set Match ✔️</button>
+</div>
+<hr>
 
 <h2>4-Player Group Fight</h2>
-
-<!-- MANUAL MATCH CONTROLS -->
-<div class="controls">
-    <select id="p1"></select>
-    <select id="p2"></select>
-    <select id="p3"></select>
-    <select id="p4"></select>
-    <br><br>
-    <button onclick="setManualMatch()">Set Match ✔️</button>
-</div>
 
 <hr>
 
@@ -120,6 +114,21 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 </div>
 
 <script>
+    function autoMatch(){
+  positions = [null,null,null,null];
+
+  let eligible = players.filter(p => data[p].matches < 4);
+
+  if(eligible.length < 4){
+    alert("League stage complete ✅");
+    return;
+  }
+
+  shuffle(eligible);
+  currentMatch = eligible.slice(0,4);
+  renderMatch();
+}
+
 // 🔥 43 PLAYERS
 const players = [
 "Naruto","Kakashi","Sai","Sakura","Neji","Rocklee","Tenten","Might Guy",
@@ -138,11 +147,6 @@ players.forEach(p=>{
 
 let currentMatch=[];
 let positions = [null,null,null,null];
-    const p1Sel=document.getElementById("p1");
-const p2Sel=document.getElementById("p2");
-const p3Sel=document.getElementById("p3");
-const p4Sel=document.getElementById("p4");
-
     
 // SHUFFLE
 function shuffle(arr){
@@ -150,20 +154,6 @@ function shuffle(arr){
     let j=Math.floor(Math.random()*(i+1));
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
-}
-
-// GENERATE MATCH (MIN 4 MATCHES LOGIC)
-function generateMatch(){
-    positions = [null,null,null,null];
-
-  let eligible = players.filter(p=>data[p].matches<4);
-  if(eligible.length<4){
-    alert("League stage complete ✅");
-    return;
-  }
-  shuffle(eligible);
-  currentMatch = eligible.slice(0,4);
-  renderMatch();
 }
     
 function renderMatch(){
@@ -253,38 +243,6 @@ function renderBoard(){
     tbody.appendChild(tr);
   });
 }
-function fillDropdowns(){
-  ["p1","p2","p3","p4"].forEach(id=>{
-    let s=document.getElementById(id);
-    s.innerHTML="";
-    players.forEach(p=>{
-      if(data[p].matches < 4){
-        let o=document.createElement("option");
-        o.value=p;
-        o.text=p;
-        s.appendChild(o);
-      }
-    });
-  });
-}
-
-function setManualMatch(){
-  let arr=[
-    p1Sel.value,
-    p2Sel.value,
-    p3Sel.value,
-    p4Sel.value
-  ];
-
-  if(new Set(arr).size!==4){
-    alert("Same player repeat ❌");
-    return;
-  }
-
-  currentMatch = arr;
-  positions=[null,null,null,null];
-  renderMatch();
-}
 
 // SAVE / LOAD / RESET
 function saveData(){
@@ -308,7 +266,6 @@ function resetData(){
 }
 
 renderBoard();
-fillDropdowns();
 </script>
 
 </body>

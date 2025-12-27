@@ -85,7 +85,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 </div>
 <hr>
 
-<h2><h2>Auto Generated Matches</h2>
+<h2>Auto Generated Matches</h2>
 <div id="matchList"></div>
 
 <hr>
@@ -115,33 +115,12 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 </div>
 
 <script>
-   let stage = "LEAGUE"; // LEAGUE | QF | SF | FINAL
-
-let qfMatches = [];
-let qfIndex = 0;
-
-let sfPlayers = [];
-let finalPlayers = [];
+    let stage = "LEAGUE";
 
     // 🔹 AUTO LEAGUE MATCH STORAGE
 let allMatches = [];
 let matchIndex = 0;
 
-    
-    function autoMatch(){
-  positions = [null,null,null,null];
-
-  let eligible = players.filter(p => data[p].matches < 4);
-
-  if(eligible.length < 4){
-    alert("League stage complete ✅");
-    return;
-  }
-
-  shuffle(eligible);
-  currentMatch = eligible.slice(0,4);
-  renderMatch();
-}
     // 🔹 RENDER ALL MATCH LIST
 function renderMatchList(){
   let box = document.getElementById("matchList");
@@ -181,6 +160,10 @@ const players = [
 "Orochimaru","Minato"," small Obito","Small Kakashi"
 ];
 
+let qualified = [];
+let qfWinners = [];
+let sfWinners = [];
+    
 // DATA
 let data = {};
 players.forEach(p=>{
@@ -219,14 +202,21 @@ function generateAllLeagueMatches(){
   matchIndex = 0;
 }
 
+    function startTournament(){
+  stage = "LEAGUE";
+  generateAllLeagueMatches();
+  matchIndex = 0;
+  renderMatchList();
+  loadNextMatch();
+}
+
     // 🔹 LOAD NEXT PRE-GENERATED MATCH
 function loadNextMatch(){
 
-if(matchIndex >= allMatches.length){
-  alert("League Complete ✅\nTop-16 Selected");
-  startQuarterFinals();
-  return;
-}
+  if(matchIndex >= allMatches.length){
+ selectTop16();
+    return;
+  }
 
   currentMatch = allMatches[matchIndex];
   positions = [null,null,null,null];
@@ -235,22 +225,18 @@ if(matchIndex >= allMatches.length){
   renderMatch();
 }
 
+function selectTop16(){
+  let sorted = Object.entries(data)
+    .sort((a,b)=>b[1].points - a[1].points || b[1].wins - a[1].wins);
 
-    function loadKnockoutMatch(){
-  if(stage === "QF"){
-    currentMatch = qfMatches[qfIndex];
-  }
-  else if(stage === "SF"){
-    currentMatch = sfPlayers;
-  }
-  else if(stage === "FINAL"){
-    currentMatch = finalPlayers;
-  }
+  qualified = sorted.slice(0,16).map(e=>e[0]);
 
-  positions = [null,null,null,null];
-  renderMatch();
+  stage = "QF";
+  alert("🔥 TOP 16 QUALIFIED");
+  loadKnockoutMatch();
 }
 
+    
 
 
 function renderMatch(){
@@ -288,82 +274,60 @@ function renderMatch(){
   alert(player+" assigned to position "+(pos+1));
 }
 
-function finalize(){
+   function finalize(){
+
+  if(currentMatch.length === 0){
+    alert("No active match ❌");
+    return;
+  }
 
   if(positions.includes(null)){
     alert("Sab positions assign karo ❌");
     return;
   }
 
-  const points = [2,1,0,-1];
+  /* 🟡 LEAGUE LOGIC */
+  if(stage === "LEAGUE"){       
+    const points = [2,1,0,-1];
 
-  positions.forEach((p,i)=>{
-    data[p].matches++;
-    data[p].points += points[i];
-    if(i===0) data[p].wins++;
-    else data[p].loss++;
-  });
+    positions.forEach((p,i)=>{
+      data[p].matches++;
+      data[p].points += points[i];
+      if(i===0) data[p].wins++;
+      else data[p].loss++;
+    });
 
-  renderBoard();
+    renderBoard();
+    alert("Result Saved ✅");
 
-  // 🔥 KNOCKOUT FLOW
-  if(stage !== "LEAGUE"){
-    let winner = positions[0];
-
-    if(stage === "QF"){
-      sfPlayers.push(winner);
-      qfIndex++;
-
-      if(qfIndex < qfMatches.length){
-        loadKnockoutMatch();
-      } else {
-        stage = "SF";
-        loadKnockoutMatch();
-      }
-    }
-    else if(stage === "SF"){
-      finalPlayers = [...sfPlayers];
-      stage = "FINAL";
-      loadKnockoutMatch();
-    }
-    else if(stage === "FINAL"){
-      alert("🏆 CHAMPION : " + winner);
-    }
+    matchIndex++;
+    renderMatchList();
+    loadNextMatch();
     return;
   }
 
-  // 🟢 LEAGUE CONTINUE
-  matchIndex++;
-  renderMatchList();
-  loadNextMatch();
-}
+  /* 🟠 KNOCKOUT LOGIC */
+  let winner = positions[0];
 
-   
-function getTop16(){
-  return Object.entries(data)
-    .sort((a,b)=> b[1].points - a[1].points || b[1].wins - a[1].wins)
-    .slice(0,16)
-    .map(e => e[0]);
-}
+  if(stage === "QF"){
+    qfWinners.push(winner);
+  }
+  else if(stage === "SF"){
+    sfWinners.push(winner);
+  }
+  else if(stage === "FINAL"){
+    alert("🏆 CHAMPION : " + winner);
+    document.getElementById("matchArea").innerHTML = "";
+    stage = "END";
+    return;
+  }
 
-function startQuarterFinals(){
-  let t = getTop16();
-
-  qfMatches = [
-    [t[0], t[7], t[8], t[15]],
-    [t[1], t[6], t[9], t[14]],
-    [t[2], t[5], t[10], t[13]],
-    [t[3], t[4], t[11], t[12]]
-  ];
-
-  stage = "QF";
-  qfIndex = 0;
-  sfPlayers = [];
-
+  currentMatch = [];
+  positions = [null,null,null,null];
   loadKnockoutMatch();
 }
 
-   
+
 // LEADERBOARD
 function renderBoard(){
   let tbody=document.getElementById("board");
@@ -407,7 +371,28 @@ function resetData(){
 }
 
 renderBoard();
+    function loadKnockoutMatch(){
+
+  let source;
+
+  if(stage === "QF") source = qualified;
+  else if(stage === "SF") source = qfWinners;
+  else if(stage === "FINAL") source = sfWinners;
+
+  if(source.length < 4){
+    if(stage === "QF"){ stage="SF"; loadKnockoutMatch(); }
+    else if(stage === "SF"){ stage="FINAL"; loadKnockoutMatch(); }
+    return;
+  }
+
+  shuffle(source);
+  currentMatch = source.splice(0,4);
+  positions = [null,null,null,null];
+  renderMatch();
+}
+    
 </script>
 
 </body>
 </html>
+

@@ -1,225 +1,382 @@
-<script>
-/* =======================
-   TOURNAMENT STATE
-======================= */
-let stage = "LEAGUE"; // LEAGUE | QF | SF | FINAL
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hokage Tournament</title>
 
-let allMatches = [];
-let matchIndex = 0;
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:radial-gradient(circle at top,#222 0%,#000 60%);
+    color:#fff;
+}
+h1{
+    text-align:center;
+    padding:20px;
+    color:gold;
+    letter-spacing:2px;
+}
+.controls{text-align:center;margin-bottom:15px;}
+button{
+    margin:5px;
+    padding:10px 18px;
+    background:#c62828;
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:bold;
+}
+button:hover{background:#ff9800;}
+.container{
+    width:95%;
+    margin:auto;
+    display:flex;
+    gap:20px;
+}
+.matches,.leaderboard{
+    background:#111;
+    padding:15px;
+    border-radius:8px;
+    box-shadow:0 0 15px rgba(255,215,0,0.2);
+    flex:1;
+}
+.matches h2,.leaderboard h2{
+    text-align:center;
+    color:gold;
+}
+.player{
+    margin:6px 0;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+    text-align:center;
+}
+th,td{
+    border:1px solid #444;
+    padding:6px;
+}
+th{background:#222;color:gold;}
+tr.highlight{background:rgba(255,215,0,0.15);}
+</style>
+</head>
+
+<body>
+
+<h1>Hokage Tournament</h1>
+
+
+<div class="controls">
+    <button onclick="saveData()">Save</button>
+    <button onclick="loadData()">Load</button>
+    <button onclick="resetData()">Reset</button>
+</div>
+
+<div class="container">
+
+
+ <!-- MATCH -->
+<div class="matches">
+<div class="controls">
+<button onclick="startTournament()">Set Match ✔️</button>
+
+</div>
+<hr>
+
+<h2><h2>Auto Generated Matches</h2>
+<div id="matchList"></div>
+
+<hr>
+
+<h2>Active Match</h2>
+<div id="matchArea"></div>
+
+    
+<!-- LEADERBOARD -->
+<div class="leaderboard">
+<h2>Leaderboard</h2>
+<table>
+<thead>    
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Wins</th>
+<th>Loss</th>
+<th>Points</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody id="board"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+   let stage = "LEAGUE"; // LEAGUE | QF | SF | FINAL
 
 let qfMatches = [];
 let qfIndex = 0;
+
 let sfPlayers = [];
 let finalPlayers = [];
 
-let currentMatch = [];
-let positions = [null,null,null,null];
+    // 🔹 AUTO LEAGUE MATCH STORAGE
+let allMatches = [];
+let matchIndex = 0;
 
-/* =======================
-   PLAYERS & DATA
-======================= */
+    
+    function autoMatch(){
+  positions = [null,null,null,null];
+
+  let eligible = players.filter(p => data[p].matches < 4);
+
+  if(eligible.length < 4){
+    alert("League stage complete ✅");
+    return;
+  }
+
+  shuffle(eligible);
+  currentMatch = eligible.slice(0,4);
+  renderMatch();
+}
+    // 🔹 RENDER ALL MATCH LIST
+function renderMatchList(){
+  let box = document.getElementById("matchList");
+  box.innerHTML = "";
+
+  allMatches.forEach((m,i)=>{
+    let div = document.createElement("div");
+    div.style.padding = "6px";
+    div.style.margin = "4px 0";
+    div.style.border = "1px solid #444";
+    div.style.fontSize = "14px";
+
+    if(i === matchIndex){
+      div.style.background = "rgba(255,215,0,0.18)";
+    } else if(i < matchIndex){
+      div.style.opacity = "0.5";
+    }
+
+    div.innerHTML = `
+      <b>Match ${i+1}</b> :
+      ${m.join(" vs ")}
+      ${i < matchIndex ? " ✅" : ""}
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+
+// 🔥 43 PLAYERS
 const players = [
 "Naruto","Kakashi","Sai","Sakura","Neji","Rocklee","Tenten","Might Guy",
 "Shikamaru","Ino","Choji","Asuma","Kiba","Shino","Hinata","Kurenai",
 "Sasuke","Seuigtsu","Karin","Jugo","Deidara","Hidan","Sasori","Tobi",
 "Itachi","Kisame","Shizune","Kakuzu","Konan","Pain","Garaa","Temari",
 "Kankuro","Chiyo","Yamato","Hiruko","Tsunade","Jiraiya","Kabuto",
-"Orochimaru","Minato","Small Obito","Small Kakashi"
+"Orochimaru","Minato"," small Obito","Small Kakashi"
 ];
 
+// DATA
 let data = {};
 players.forEach(p=>{
   data[p]={wins:0,loss:0,points:0,matches:0};
 });
 
-/* =======================
-   UTILITIES
-======================= */
+let currentMatch=[];
+let positions = [null,null,null,null];
+    
+// SHUFFLE
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
     let j=Math.floor(Math.random()*(i+1));
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
 }
-
-/* =======================
-   LEAGUE MATCH GENERATION
-======================= */
+    // 🔹 GENERATE ALL LEAGUE MATCHES AT ONCE
 function generateAllLeagueMatches(){
+
+  let tempMatches = [];
   let count = {};
-  players.forEach(p=>count[p]=0);
-  allMatches = [];
+  players.forEach(p => count[p] = 0);
 
   while(true){
-    let pool = players.filter(p=>count[p]<4);
+    let pool = players.filter(p => count[p] < 4);
     if(pool.length < 4) break;
 
     shuffle(pool);
     let match = pool.slice(0,4);
-    match.forEach(p=>count[p]++);
-    allMatches.push(match);
-  }
-}
 
-function startTournament(){
-  stage = "LEAGUE";
-  generateAllLeagueMatches();
+    match.forEach(p => count[p]++);
+    tempMatches.push(match);
+  }
+
+  allMatches = tempMatches;
   matchIndex = 0;
-  renderMatchList();
-  loadNextMatch();
 }
 
-/* =======================
-   LOAD MATCHES
-======================= */
+    // 🔹 LOAD NEXT PRE-GENERATED MATCH
 function loadNextMatch(){
-  if(matchIndex >= allMatches.length){
-    alert("League Complete ✅");
-    startQuarterFinals();
-    return;
-  }
+
+if(matchIndex >= allMatches.length){
+  alert("League Complete ✅\nTop-16 Selected");
+  startQuarterFinals();
+  return;
+}
+
   currentMatch = allMatches[matchIndex];
   positions = [null,null,null,null];
-  renderMatchList();
+
+  renderMatchList();   // 👈 ADD
   renderMatch();
 }
 
-/* =======================
-   MATCH LIST UI
-======================= */
-function renderMatchList(){
-  let box = document.getElementById("matchList");
-  box.innerHTML="";
-  allMatches.forEach((m,i)=>{
-    let div=document.createElement("div");
-    div.style.border="1px solid #444";
-    div.style.padding="6px";
-    div.style.margin="4px 0";
-    if(i===matchIndex) div.style.background="rgba(255,215,0,0.2)";
-    if(i<matchIndex) div.style.opacity="0.5";
-    div.innerHTML=`<b>Match ${i+1}</b> : ${m.join(" vs ")} ${i<matchIndex?"✅":""}`;
-    box.appendChild(div);
-  });
+
+    function loadKnockoutMatch(){
+  if(stage === "QF"){
+    currentMatch = qfMatches[qfIndex];
+  }
+  else if(stage === "SF"){
+    currentMatch = sfPlayers;
+  }
+  else if(stage === "FINAL"){
+    currentMatch = finalPlayers;
+  }
+
+  positions = [null,null,null,null];
+  renderMatch();
 }
 
-/* =======================
-   RENDER MATCH
-======================= */
+
+
 function renderMatch(){
-  let area=document.getElementById("matchArea");
+
+
+  let area = document.getElementById("matchArea");
   area.innerHTML="";
+
   currentMatch.forEach(p=>{
-    area.innerHTML+=`
+    area.innerHTML += `
       <div class="player">
         <b>${p}</b><br>
         <button onclick="assign('${p}',0)">🥇</button>
         <button onclick="assign('${p}',1)">🥈</button>
         <button onclick="assign('${p}',2)">🥉</button>
         <button onclick="assign('${p}',3)">😵</button>
-      </div>`;
+      </div>
+    `;
   });
-  area.innerHTML+=`<br><button onclick="finalize()">Set Result ✔️</button>`;
+
+  area.innerHTML += `<br><button onclick="finalize()">Set Result ✔️</button>`;
 }
 
-function assign(player,pos){
-  if(positions.includes(player)){alert("Already assigned");return;}
-  if(positions[pos]){alert("Position taken");return;}
-  positions[pos]=player;
+
+    function assign(player,pos){
+  if(positions.includes(player)){
+    alert(player+" already assigned ❌");
+    return;
+  }
+  if(positions[pos]){
+    alert("Position already taken ❌");
+    return;
+  }
+  positions[pos] = player;
+  alert(player+" assigned to position "+(pos+1));
 }
 
-/* =======================
-   FINALIZE (🔥 SINGLE SOURCE OF TRUTH)
-======================= */
 function finalize(){
-  if(currentMatch.length===0) return;
-  if(positions.includes(null)){alert("Assign all positions");return;}
 
-  const points=[2,1,0,-1];
+  if(positions.includes(null)){
+    alert("Sab positions assign karo ❌");
+    return;
+  }
+
+  const points = [2,1,0,-1];
 
   positions.forEach((p,i)=>{
     data[p].matches++;
-    data[p].points+=points[i];
+    data[p].points += points[i];
     if(i===0) data[p].wins++;
     else data[p].loss++;
   });
 
   renderBoard();
 
-  /* 🔴 KNOCKOUT FLOW */
-  if(stage!=="LEAGUE"){
-    let winner=positions[0];
+  // 🔥 KNOCKOUT FLOW
+  if(stage !== "LEAGUE"){
+    let winner = positions[0];
 
-    if(stage==="QF"){
+    if(stage === "QF"){
       sfPlayers.push(winner);
       qfIndex++;
-      if(qfIndex<qfMatches.length){
+
+      if(qfIndex < qfMatches.length){
         loadKnockoutMatch();
-      }else{
-        stage="SF";
+      } else {
+        stage = "SF";
         loadKnockoutMatch();
       }
     }
-    else if(stage==="SF"){
-      finalPlayers=[...sfPlayers];
-      stage="FINAL";
+    else if(stage === "SF"){
+      finalPlayers = [...sfPlayers];
+      stage = "FINAL";
       loadKnockoutMatch();
     }
-    else if(stage==="FINAL"){
-      alert("🏆 CHAMPION : "+winner);
+    else if(stage === "FINAL"){
+      alert("🏆 CHAMPION : " + winner);
     }
     return;
   }
 
-  /* 🟢 LEAGUE NEXT */
+  // 🟢 LEAGUE CONTINUE
   matchIndex++;
+  renderMatchList();
   loadNextMatch();
 }
 
-/* =======================
-   TOP 16 + KNOCKOUT
-======================= */
+   
 function getTop16(){
   return Object.entries(data)
-    .sort((a,b)=>b[1].points-a[1].points||b[1].wins-a[1].wins)
-    .slice(0,16).map(e=>e[0]);
+    .sort((a,b)=> b[1].points - a[1].points || b[1].wins - a[1].wins)
+    .slice(0,16)
+    .map(e => e[0]);
 }
 
 function startQuarterFinals(){
-  let t=getTop16();
-  qfMatches=[
-    [t[0],t[7],t[8],t[15]],
-    [t[1],t[6],t[9],t[14]],
-    [t[2],t[5],t[10],t[13]],
-    [t[3],t[4],t[11],t[12]]
+  let t = getTop16();
+
+  qfMatches = [
+    [t[0], t[7], t[8], t[15]],
+    [t[1], t[6], t[9], t[14]],
+    [t[2], t[5], t[10], t[13]],
+    [t[3], t[4], t[11], t[12]]
   ];
-  stage="QF";
-  qfIndex=0;
-  sfPlayers=[];
+
+  stage = "QF";
+  qfIndex = 0;
+  sfPlayers = [];
+
   loadKnockoutMatch();
 }
 
-function loadKnockoutMatch(){
-  if(stage==="QF") currentMatch=qfMatches[qfIndex];
-  else if(stage==="SF") currentMatch=sfPlayers;
-  else if(stage==="FINAL") currentMatch=finalPlayers;
-  positions=[null,null,null,null];
-  renderMatch();
-}
-
-/* =======================
-   LEADERBOARD
-======================= */
+   
+// LEADERBOARD
 function renderBoard(){
   let tbody=document.getElementById("board");
   tbody.innerHTML="";
-  Object.entries(data)
-  .sort((a,b)=>b[1].points-a[1].points||b[1].wins-a[1].wins)
-  .forEach((e,i)=>{
+  let sorted=Object.entries(data)
+    .sort((a,b)=>b[1].points-a[1].points||b[1].wins-a[1].wins);
+
+  sorted.forEach((e,i)=>{
     let tr=document.createElement("tr");
-    if(i===0) tr.classList.add("highlight");
+    if(i===0)tr.classList.add("highlight");
     tr.innerHTML=`
       <td>${i+1}</td>
-      <td>${e[0]}</td>
+      <td>${e[0]} ${i===0?"✔️":""}</td>
       <td>${e[1].wins}</td>
       <td>${e[1].loss}</td>
       <td>${e[1].points}</td>
@@ -228,5 +385,29 @@ function renderBoard(){
   });
 }
 
+// SAVE / LOAD / RESET
+function saveData(){
+  localStorage.setItem("hokageData",JSON.stringify(data));
+  alert("Saved ✅");
+}
+function loadData(){
+  let d=localStorage.getItem("hokageData");
+  if(!d){alert("No data");return;}
+  data=JSON.parse(d);
+  renderBoard();
+  alert("Loaded ✅");
+}
+function resetData(){
+  if(!confirm("Reset tournament?"))return;
+  players.forEach(p=>{
+    data[p]={wins:0,loss:0,points:0,matches:0};
+  });
+  localStorage.removeItem("hokageData");
+  renderBoard();
+}
+
 renderBoard();
 </script>
+
+</body>
+</html>

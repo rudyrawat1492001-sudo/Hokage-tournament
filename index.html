@@ -92,6 +92,7 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 
 <h2>Active Match</h2>
 <div id="matchArea"></div>
+</div> <!-- CLOSE matches -->
 
     
 <!-- LEADERBOARD -->
@@ -210,7 +211,12 @@ function generateAllLeagueMatches(){
   allMatches = tempMatches;
   matchIndex = 0;
 }
-
+function startTournament(){
+  generateAllLeagueMatches(); // saare matches ek saath create
+  renderMatchList();         // poori list turant dikhe
+  loadNextMatch();           // first match active ho
+}
+    
     // 🔹 LOAD NEXT PRE-GENERATED MATCH
 function loadNextMatch(){
 

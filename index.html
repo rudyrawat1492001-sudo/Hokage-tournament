@@ -85,15 +85,15 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 </div>
 <hr>
 
-<h2>4-Player Group Fight</h2>
+<h2><h2>Auto Generated Matches</h2>
+<div id="matchList"></div>
 
 <hr>
 
+<h2>Active Match</h2>
 <div id="matchArea"></div>
 
-</div>
-
-
+    
 <!-- LEADERBOARD -->
 <div class="leaderboard">
 <h2>Leaderboard</h2>
@@ -134,6 +134,34 @@ let matchIndex = 0;
   currentMatch = eligible.slice(0,4);
   renderMatch();
 }
+    // 🔹 RENDER ALL MATCH LIST
+function renderMatchList(){
+  let box = document.getElementById("matchList");
+  box.innerHTML = "";
+
+  allMatches.forEach((m,i)=>{
+    let div = document.createElement("div");
+    div.style.padding = "6px";
+    div.style.margin = "4px 0";
+    div.style.border = "1px solid #444";
+    div.style.fontSize = "14px";
+
+    if(i === matchIndex){
+      div.style.background = "rgba(255,215,0,0.18)";
+    } else if(i < matchIndex){
+      div.style.opacity = "0.5";
+    }
+
+    div.innerHTML = `
+      <b>Match ${i+1}</b> :
+      ${m.join(" vs ")}
+      ${i < matchIndex ? " ✅" : ""}
+    `;
+
+    box.appendChild(div);
+  });
+}
+
 
 // 🔥 43 PLAYERS
 const players = [
@@ -193,13 +221,13 @@ function loadNextMatch(){
 
   currentMatch = allMatches[matchIndex];
   positions = [null,null,null,null];
+
+  renderMatchList();   // 👈 ADD
   renderMatch();
 }
-    // 🔹 START TOURNAMENT ONCE
-function startTournament(){
-  generateAllLeagueMatches();
-  loadNextMatch();
-}
+
+
+    
 
 
 function renderMatch(){
@@ -268,6 +296,7 @@ function renderMatch(){
   alert("Result Saved ✅");
         
     matchIndex++;
+renderMatchList(); 
   loadNextMatch();
 }
 

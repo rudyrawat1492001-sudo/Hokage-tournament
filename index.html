@@ -80,7 +80,6 @@ tr.highlight{background:rgba(255,215,0,0.15);}
  <!-- MATCH -->
 <div class="matches">
 <div class="controls">
-<button onclick="startTournament()">Set Match ✔️</button>
 
 </div>
 <hr>
@@ -92,7 +91,8 @@ tr.highlight{background:rgba(255,215,0,0.15);}
 
 <h2>Active Match</h2>
 <div id="matchArea"></div>
-
+    
+  </div> <!-- ✅ matches close here -->
     
 <!-- LEADERBOARD -->
 <div class="leaderboard">
@@ -157,7 +157,7 @@ const players = [
 "Sasuke","Seuigtsu","Karin","Jugo","Deidara","Hidan","Sasori","Tobi",
 "Itachi","Kisame","Shizune","Kakuzu","Konan","Pain","Garaa","Temari",
 "Kankuro","Chiyo","Yamato","Hiruko","Tsunade","Jiraiya","Kabuto",
-"Orochimaru","Minato"," small Obito","Small Kakashi"
+"Orochimaru","Minato","Small Obito","Small Kakashi"
 ];
 
 let qualified = [];
@@ -371,7 +371,10 @@ function resetData(){
 }
 
 renderBoard();
-    function loadKnockoutMatch(){
+ startTournament(); 
+
+    
+   function loadKnockoutMatch(){
 
   let source;
 

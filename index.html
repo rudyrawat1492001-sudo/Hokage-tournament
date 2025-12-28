@@ -412,6 +412,11 @@ function resetData(){
 
 renderBoard();
 
+    if (localStorage.getItem("hokageState")) {
+  loadData();          // 🔁 refresh pe resume
+} else {
+  startTournament();   // 🆕 first time auto generate matches
+}
    function loadKnockoutMatch(){
 
   let source;

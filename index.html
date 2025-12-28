@@ -351,29 +351,67 @@ function renderBoard(){
 
 // SAVE / LOAD / RESET
 function saveData(){
-  localStorage.setItem("hokageData",JSON.stringify(data));
-  alert("Saved ✅");
+
+  let state = {
+    data,
+    allMatches,
+    matchIndex,
+    stage,
+    qualified,
+    qfWinners,
+    sfWinners,
+    currentMatch,
+    positions
+  };
+
+  localStorage.setItem("hokageState", JSON.stringify(state));
+  alert("Tournament Saved ✅");
 }
+
 function loadData(){
-  let d=localStorage.getItem("hokageData");
-  if(!d){alert("No data");return;}
-  data=JSON.parse(d);
+
+  let raw = localStorage.getItem("hokageState");
+  if(!raw){
+    alert("No saved tournament ❌");
+    return;
+  }
+
+  let state = JSON.parse(raw);
+
+  data         = state.data;
+  allMatches   = state.allMatches;
+  matchIndex   = state.matchIndex;
+  stage        = state.stage;
+  qualified    = state.qualified;
+  qfWinners    = state.qfWinners;
+  sfWinners    = state.sfWinners;
+  currentMatch = state.currentMatch;
+  positions    = state.positions;
+
   renderBoard();
-  alert("Loaded ✅");
+  renderMatchList();
+
+ if(currentMatch && currentMatch.length === 4){
+  renderMatch();              // resume exact same match
+}else if(stage !== "END"){
+  loadKnockoutMatch();        // only if no active match
 }
+
+
+  alert("Tournament Resumed 🔁");
+}
+
 function resetData(){
   if(!confirm("Reset tournament?"))return;
   players.forEach(p=>{
     data[p]={wins:0,loss:0,points:0,matches:0};
   });
-  localStorage.removeItem("hokageData");
+  localStorage.removeItem("hokageState");
   renderBoard();
 }
 
 renderBoard();
- startTournament(); 
 
-    
    function loadKnockoutMatch(){
 
   let source;
